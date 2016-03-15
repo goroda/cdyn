@@ -41,8 +41,8 @@
 #include "CuTest.h"
 #include "simulate.h"
 
-static size_t dx = 3;
-static size_t du = 0;
+size_t dx = 3;
+size_t du = 0;
 
 ////////////////////////////////////////////////////////////////////
 

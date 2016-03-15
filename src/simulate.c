@@ -191,6 +191,7 @@ double * trajectory_get_last_control(const struct Trajectory * traj)
     Take a step of a trajectory
 
     \param[in,out] traj   - trajectory
+    \param[in]     pol    - policy
     \param[in]     dyn    - dynamics
     \param[in]     dt     - time step
                             Used when method=
