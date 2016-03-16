@@ -41,9 +41,10 @@
 #include "CuTest.h"
 #include "dynamics.h"
 
-size_t dx = 3;
-size_t du = 2;
-size_t dw = 2;
+static size_t dx = 3;
+static size_t du = 2;
+static size_t dw = 2;
+
 int bc(double time, const double *x, const double *u,
        double *out,double * grad, void * arg)
 {

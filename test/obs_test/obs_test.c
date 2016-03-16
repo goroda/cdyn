@@ -41,8 +41,8 @@
 #include "CuTest.h"
 #include "observations.h"
 
-size_t dx = 3;
-size_t dy = 2;
+static size_t dx = 3;
+static size_t dy = 2;
 
 int obsf(double time, const double * x, double * out, void * arg)
 {
