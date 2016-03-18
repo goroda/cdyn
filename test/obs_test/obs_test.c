@@ -66,7 +66,7 @@ void Test_observation_alloc(CuTest * tc)
     double obsvals[2];
     double obsvals2[2];
 
-    int res = observation_observe(obs,time,test_pt,obsvals);
+    int res = observation_observe(obs,NULL,time,test_pt,obsvals);
     CuAssertIntEquals(tc,0,res);
 
     obsf(time,test_pt,obsvals2,&coeff);

@@ -233,7 +233,7 @@ struct Diff
 /*!
   Add controlled drift dynamcis
 
-  \param[in,out] dr    - allocated diff object
+  \param[in,out] diff  - allocated diff object
   \param[in]     s     - controlled dynamics
   \param[in]     sargs - arguments to dynamics
 
@@ -286,7 +286,7 @@ diff_alloc_controlled(size_t dx, size_t du, size_t dw,
 /*!
   Add uncontrolled drift dynamcis
 
-  \param[in,out] dr    - allocated diff object
+  \param[in,out] diff  - allocated diff object
   \param[in]     s     - uncontrolled dynamics
   \param[in]     sargs - arguments to dynamics
 
