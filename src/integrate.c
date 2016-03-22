@@ -44,6 +44,26 @@ euler_maruyama_step(double time, const double * x, const double * noise,
         nextx[ii] = x[ii] + dt * drift[ii];
         for (size_t jj = 0; jj < dw; jj++){
             nextx[ii] += sqrtdt*diff[jj*d+ii]*noise[jj];
+            if (isinf(nextx[ii])){
+                fprintf(stderr,"STOP!\n");
+                printf("noise \n");
+                for (size_t kk = 0; kk < dw; kk++){
+                    printf("%G ",noise[kk]);
+                }
+                printf("\n");
+                printf("now diff\n");
+                for (size_t kk = 0; kk < dw; kk++){
+                    printf("%G ",diff[kk*d+ii]);
+                }
+                printf("\n");
+                printf("drift is %G\n",drift[ii]);
+                printf("now x\n");
+                for (size_t kk = 0; kk < d; kk++){
+                    printf("%G ",x[kk]);
+                }
+                printf("\n");
+                exit(1);
+            }
         }
             
     }
