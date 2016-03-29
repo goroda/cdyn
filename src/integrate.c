@@ -94,6 +94,7 @@ void integrator_destroy(struct Integrator * i)
     if (i != NULL){
         drift_free(i->drift); i->drift = NULL;
         free(i->space); i->space = NULL;
+        free(i); i= NULL;
     }
 }
 

@@ -71,6 +71,7 @@ observation_alloc(size_t dx, size_t dy,
 void observation_free(struct Observation * obs)
 {
     if (obs != NULL){
+        free(obs->cov); obs->cov = NULL;
         free(obs); obs = NULL;
     }
 }
