@@ -191,74 +191,34 @@ double * trajectory_get_last_control(const struct Trajectory * traj)
     Take a step of a trajectory
 
     \param[in,out] traj   - trajectory
-    \param[in]     dyn    - dynamics
+    \param[in]     ode    - integrator
     \param[in]     dt     - time step
-                            Used when method=
-                            "euler" or 
-                            "euler-maruyama"
-    \param[in]     method - integration algorithm
-    \param[in]     space  - free space to use for computation
-    \param[in]     noise  - noise arguments
-    \param[in]     args   - additional arguments
-
-    \note
-    Let d denote dimension of state 
-    Let dw denote dimension of noise 
-    Method "euler" - space (d), 
-                     noise NULL, 
-                     args NULL  
-    Method "euler-maruyama" - space(d + d*dw), 
-                              noise (dw) gaussian samples,  
-                              args NULL 
 **************************************************************/
-int trajectory_step(struct Trajectory * traj,
-                    struct Dyn * dyn,
-                    double dt, char * method,
-                    double * space,
-                    void * noise, void * args)
+int trajectory_step(struct Trajectory * traj,             
+                    struct Integrator * ode,
+                    double dt)
+                    /* struct Dyn * dyn, */
+                    /* double dt, char * method, */
+                    /* double * space, */
+                    /* void * noise, void * args) */
 {
-    (void)(args);
     if (traj == NULL){
         fprintf(stderr,"Warning: cannot advance trajectory starting\n");
         fprintf(stderr,"         from NULL Trajectory\n");
         return 1;
     }
-    if (dyn == NULL){
-        fprintf(stderr,"Warning: cannot advance trajectory starting\n");
-        fprintf(stderr,"         from NULL Dyn\n");
-        return 1;
-    }
+
     assert (dt > 0);
 
-    
     double curr_time = trajectory_get_last_time(traj);
     double * x = trajectory_get_last_state(traj);
-//    double * u = trajectory_get_last_control(traj);
-
-    size_t dx = dyn_get_dx(dyn);
+    size_t dx = traj->dx;
     double * newx = malloc(dx*sizeof(double));
     assert (newx != NULL);
 
-    int res;
-    if (strcmp(method,"euler") == 0){
-        res = euler_step(curr_time,x,newx,dt,dyn,space);
-    }
-    else if (strcmp(method,"euler-maruyama") == 0){
-        res = euler_maruyama_step(curr_time,x,noise,newx,dt,
-                                dyn,space,space+dx);
-    }
-    else{
-        return 1;
-    }
-
-    if (res != 0){
-        free(newx); newx = NULL;
-        return res;
-    }
-
-    size_t du = dyn_get_du(dyn);
+    integrator_step(ode,curr_time,curr_time+dt,x,newx);
     double new_time = curr_time + dt;
-    res = trajectory_add(&traj,dx,du,new_time,newx,NULL);
+    int res = trajectory_add(&traj,dx,0,new_time,newx,NULL);
     free(newx); newx = NULL;;
 
     return res;

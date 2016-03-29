@@ -37,8 +37,10 @@
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
+#include <assert.h>
 
 #include "CuTest.h"
+#include "integrate.h"
 #include "simulate.h"
 
 static size_t dx = 3;
@@ -83,8 +85,9 @@ void Test_trajectory_alloc(CuTest * tc)
     trajectory_free(traj); traj = NULL;
 }
 
-int b(double time, const double * x, double * out, void * arg)
+int b(double time, const double * x, double * out, double * jac, void * arg)
 {
+    assert (jac == NULL);
     (void)(arg);
     out[0] = time*x[0];
     out[1] = x[1];
@@ -92,27 +95,31 @@ int b(double time, const double * x, double * out, void * arg)
     return 0;
 }
 
-void Test_trajectory_forward_euler(CuTest * tc)
+void Test_trajectory_step(CuTest * tc)
 {
 
-    fprintf(stdout,"Testing forward_euler\n");
+    fprintf(stdout,"Testing trajectory_step\n");
 
-    struct Drift * drift = drift_alloc_uncontrolled(dx,b,NULL);
-    struct Dyn * dyn = dyn_alloc(drift,NULL);
+    struct Integrator * ode = integrator_create(dx,b,NULL);
+    double dtmin = 1e-3;
+    double dtmax = 0.25;
+    double tol = 1e-8;
+    integrator_set_type(ode,"rkf45");
+    integrator_set_adaptive_opts(ode,dtmin,dtmax,tol);
+    integrator_set_verbose(ode,0);
 
     double t1 = 0.0;
     double pt1[3] = {0.5, 0.2, 0.1};
 
     int res;
     struct Trajectory * traj = NULL;
-    res = trajectory_add(&traj,dx,du,t1,pt1,NULL);
+    res = trajectory_add(&traj,dx,0,t1,pt1,NULL);
     CuAssertIntEquals(tc,0,res);
 
-    double space[3];
-    double dt = 1e-3;
-    size_t nsteps = 1504;
+    double dt = 1e-1;
+    size_t nsteps = 10;
     for (size_t ii = 0; ii < nsteps; ii++){
-        res = trajectory_step(traj,dyn,dt,"euler",space,NULL,NULL);
+        res = trajectory_step(traj,ode,dt);
         CuAssertIntEquals(tc,0,res);
     }
 
@@ -129,14 +136,14 @@ void Test_trajectory_forward_euler(CuTest * tc)
     
 //    trajectory_print(traj,stdout,2);
     trajectory_free(traj); traj = NULL;
-    dyn_free_deep(dyn); dyn = NULL;
+    integrator_destroy(ode); ode = NULL;
 }
 
 CuSuite * TrajGetSuite(){
 
     CuSuite * suite = CuSuiteNew();
     SUITE_ADD_TEST(suite, Test_trajectory_alloc);
-    SUITE_ADD_TEST(suite, Test_trajectory_forward_euler);
+    SUITE_ADD_TEST(suite, Test_trajectory_step);
     return suite;
 }
 

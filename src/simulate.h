@@ -9,7 +9,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 
-#include "dynamics.h"
+#include "integrate.h"
 
 struct Trajectory;
 struct Trajectory * trajectory_init(size_t, size_t, double, 
@@ -24,10 +24,7 @@ double trajectory_get_last_time(const struct Trajectory *);
 double * trajectory_get_last_state(const struct Trajectory *);
 double * trajectory_get_last_control(const struct Trajectory *);
 
-int trajectory_step(struct Trajectory *,
-                    struct Dyn *,
-                    double, char *,
-                    double *,
-                    void *, void *);
+int trajectory_step(struct Trajectory *,struct Integrator *,
+                    double);
 
 #endif  
