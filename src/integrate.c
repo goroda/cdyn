@@ -13,13 +13,14 @@
 #include "dynamics.h"
 //#include "simulate.h"
 
-
 enum IntegratorType {UNSET,FE,RK4,RKF45};
 
 /** \struct Integrator
  *  \brief Integrator
- *  \var Integraotr::dx
+ *  \var Integrator::dx
  *  dimension of state space
+ *  \var Integrator::du
+ *  dimension of control space
  *  \var Integrator::drift
  *  drift dynamics
  *  \var Integrator::dt
@@ -38,9 +39,19 @@ enum IntegratorType {UNSET,FE,RK4,RKF45};
 struct Integrator
 {
     size_t dx;
+
     enum IntegratorType type;
     struct Drift * drift;
 
+    // controller stuff
+    size_t du;
+    int (*controlled_dyn)(double, const double *,
+                          const double *, double *,
+                          double *, void *);
+    void * cdargs;
+    int (*controller)(double, const double *, double *, void *);
+    void * cargs;
+    
     // for fixed step
     double dt;
     
@@ -78,12 +89,93 @@ integrator_create(size_t dx,
     i->drift = drift_alloc(dx,b,bargs);
     i->space = NULL;
 
+    i->du = 0;
+    i->controlled_dyn = NULL;
+    i->cdargs = NULL;
+    i->controller = NULL;
+    i->cargs = NULL;
+    
     i->dt = 0;
     i->dtmin = 0;
     i->dtmax = 0;
     i->tol = 0.0;
     
     return i;
+}
+
+int bcon(double time, const double * x, double * out, double * jac, void * arg)
+{
+    assert (jac==NULL);
+    struct Integrator * i = arg;
+    double * u = calloc(i->du,sizeof(double));
+    if (u == NULL){
+        return 1;
+    }
+    int res = i->controller(time,x,u,i->cargs);
+    if (res != 0 ){
+        printf("Controller returned bad value\n");
+        free(u); u= NULL;
+        return res;
+    }
+    res = i->controlled_dyn(time,x,u,out,NULL,i->cdargs);
+    free(u); u = NULL;
+    return res;
+}
+
+
+/*!
+  Create an integrator
+
+  \param[in] dx         - dimension of state
+  \param[in] du         - dimension of control
+  \param[in] b          - drift dynamics(time,x,u,out,jac,bargs)
+  \param[in] bargs      - arguments to drift dynamics
+  \param[in] controller - controller(time,x,out,cargs) 
+  \param[in] cargs      - control arguments
+
+  \return integrator
+*/
+struct Integrator *
+integrator_create_controlled(
+    size_t dx, size_t du,
+    int (*b)(double, const double *, const double *,double*,double *, void *),
+    void * bargs,
+    int (*controller)(double, const double *, double *, void *),
+    void * cargs)
+{
+
+    struct Integrator * i = malloc(sizeof(struct Integrator));
+    if (i == NULL){
+        fprintf(stderr,"Error allocating memory for Integrator\n");
+        exit(1);
+    }
+    i->dx = dx;
+    i->type = UNSET;
+    i->space = NULL;
+
+    i->du = du;
+    i->controlled_dyn = b;
+    i->cdargs = bargs;
+    i->controller = controller;
+    i->cargs = cargs;
+
+    i->dt = 0;
+    i->dtmin = 0;
+    i->dtmax = 0;
+    i->tol = 0.0;
+
+    i->drift = drift_alloc(dx,bcon,i);
+    return i;
+}
+
+/*!
+Evaluate the controller
+*/
+int integrator_eval_controller(struct Integrator * i,
+                               double time, const double * x, double * u)
+{
+    int res = i->controller(time,x,u,i->cargs);
+    return res;
 }
 
 /*!
@@ -525,10 +617,8 @@ int rk4_step(double time, const double * x, double * nextx,
     return res;
 }
 
-
-
 /*!
-   Take a step of Runge-Kutta
+   Take a step of euler_maruyama
 */
 int 
 euler_maruyama_step(double time, const double * x, const double * noise,

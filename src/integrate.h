@@ -14,6 +14,15 @@ struct Integrator *
 integrator_create(size_t,
                   int (*)(double,const double*,double*,double*,void*),
                   void *);
+struct Integrator *
+integrator_create_controlled(
+    size_t, size_t,
+    int (*)(double, const double *, const double *,double*,double *, void *),
+    void *,
+    int (*)(double, const double *, double *, void *),
+    void *);
+int integrator_eval_controller(struct Integrator *,
+                               double, const double *, double *);
 void integrator_destroy(struct Integrator *);
 void integrator_set_type(struct Integrator *, char *);
 void integrator_set_dt(struct Integrator *, double);

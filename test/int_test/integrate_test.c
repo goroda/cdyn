@@ -122,7 +122,6 @@ int b45(double time, const double * x, double * out, double * jac, void * arg)
     return 0;
 }
 
-
 void Test_integrator_rkf45(CuTest * tc)
 {
 
@@ -163,6 +162,66 @@ void Test_integrator_rkf45(CuTest * tc)
     integrator_destroy(ode);
 }
 
+int b45_cont(double time, const double * x,
+             const double * u, double * out, double * jac, void * arg)
+{
+    assert (jac == NULL);
+    (void)(arg);
+    out[0] = time*x[0];
+    out[1] = x[1];
+    out[2] = u[0];
+    return 0;
+}
+
+int controller(double time, const double * x, double * u, void * arg)
+{
+    (void)(time);
+    (void)(arg);
+    u[0] = pow(x[2],2);
+    return 0;
+}
+
+void Test_integrator_rkf45_controlled(CuTest * tc)
+{
+
+    fprintf(stdout,"Testing rkf45 with control\n");
+
+//    double dtmin = 1e-2;
+    double dtmin = 1e-3;
+    double dtmax = 0.25;
+    double tol = 5e-8;
+
+//    struct Integrator * ode = integrator_create(1,b45,NULL);
+    struct Integrator * ode =
+        integrator_create_controlled(dx,1,b45_cont,NULL,controller,NULL);
+    integrator_set_type(ode,"rkf45");
+    integrator_set_adaptive_opts(ode,dtmin,dtmax,tol);
+    integrator_set_verbose(ode,0);
+    
+    /* double start_time = 0.0; */
+    /* double end_time = 3e-1; */
+    /* double pt1[1] = {0.0}; */
+    /* double sol[1]; */
+    
+    double start_time = 0.0;
+    double end_time = 2.0;
+    double pt1[3] = {0.5, 0.2, 0.1};
+    double sol[3];
+
+    integrator_step(ode,start_time,end_time,pt1,sol);
+
+    double final_time = end_time;;
+    double sol1 = pt1[0] *exp(pow(final_time,2)/2.0);
+    double sol2 = pt1[1] *exp(final_time);
+    double sol3 = pt1[2]/(1.0-pt1[2]*final_time);
+    
+    CuAssertDblEquals(tc,sol1,sol[0],1e-7);
+    CuAssertDblEquals(tc,sol2,sol[1],1e-7);
+    CuAssertDblEquals(tc,sol3,sol[2],1e-7);
+
+    integrator_destroy(ode);
+}
+
 CuSuite * IntegratorGetSuite(){
 
     CuSuite * suite = CuSuiteNew();
@@ -170,6 +229,7 @@ CuSuite * IntegratorGetSuite(){
     SUITE_ADD_TEST(suite, Test_integrator_forward_euler);
     SUITE_ADD_TEST(suite, Test_integrator_rk4);
     SUITE_ADD_TEST(suite, Test_integrator_rkf45);
+    SUITE_ADD_TEST(suite, Test_integrator_rkf45_controlled);
     return suite;
 }
 

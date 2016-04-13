@@ -44,13 +44,12 @@ struct Trajectory * trajectory_init(size_t dx, size_t du, double time,
                                     const double * state, 
                                     const double * control)
 {
-
     struct Trajectory * t = malloc(sizeof(struct Trajectory ));
     if (t == NULL){
-        fprintf(stderr, "Cannot allocater ajectory\n");
+        fprintf(stderr, "Cannot allocate trajectory\n");
         exit(1);
     }
-    
+
     t->dx = dx;
     t->du = du;
     t->time = time;
@@ -61,6 +60,7 @@ struct Trajectory * trajectory_init(size_t dx, size_t du, double time,
     }
     memmove(t->state,state,dx*sizeof(double));
     if (du != 0){
+        //printf("ok!\n");
         t->du = du;
         t->control = malloc(du*sizeof(double));
         if (t->control == NULL){
@@ -218,7 +218,23 @@ int trajectory_step(struct Trajectory * traj,
 
     integrator_step(ode,curr_time,curr_time+dt,x,newx);
     double new_time = curr_time + dt;
-    int res = trajectory_add(&traj,dx,0,new_time,newx,NULL);
+
+    int res = 0;
+    if (traj->du > 0){
+        double * u = calloc(traj->du, sizeof(double));
+        assert (u != NULL);
+        res = integrator_eval_controller(ode,new_time,newx,u);
+        if (res != 0){
+            free(u); u = NULL;
+            free(newx); newx = NULL;
+            return res;
+        }
+        res = trajectory_add(&traj,dx,traj->du,new_time,newx,u);
+        free(u); u = NULL;
+    }
+    else{
+        res = trajectory_add(&traj,dx,0,new_time,newx,NULL);
+    }
     free(newx); newx = NULL;;
 
     return res;
