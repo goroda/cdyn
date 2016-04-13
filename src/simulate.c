@@ -9,7 +9,6 @@
 #include <assert.h>
 #include <math.h>
 
-#include "dynamics.h"
 #include "integrate.h"
 
 /** \struct Trajectory
@@ -197,10 +196,6 @@ double * trajectory_get_last_control(const struct Trajectory * traj)
 int trajectory_step(struct Trajectory * traj,             
                     struct Integrator * ode,
                     double dt)
-                    /* struct Dyn * dyn, */
-                    /* double dt, char * method, */
-                    /* double * space, */
-                    /* void * noise, void * args) */
 {
     if (traj == NULL){
         fprintf(stderr,"Warning: cannot advance trajectory starting\n");

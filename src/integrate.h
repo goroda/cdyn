@@ -6,9 +6,6 @@
 #ifndef INTEGRATE_H
 #define INTEGRATE_H
 
-#include "dynamics.h"
-
-
 struct Integrator;
 struct Integrator *
 integrator_create(size_t,
@@ -32,15 +29,9 @@ void integrator_step(struct Integrator *,
                      double, double,
                      const double *, double *);
 
-
-int euler_step(double time, const double * x, double * nextx,
-                   double dt, struct Dyn * dyn, double * driftv);
-
-int rk4_step(double, const double *, double *,
-             double,struct Dyn *, double *);
-int 
-euler_maruyama_step(double, const double *, const double *,
-                        double *, double, struct Dyn *, 
-                        double *, double *);
+/* int  */
+/* euler_maruyama_step(double, const double *, const double *, */
+/*                         double *, double, struct Dyn *,  */
+/*                         double *, double *); */
 
 #endif

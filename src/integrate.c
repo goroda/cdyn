@@ -10,8 +10,6 @@
 #include <assert.h>
 
 #include "integrate.h"
-#include "dynamics.h"
-//#include "simulate.h"
 
 enum IntegratorType {UNSET,FE,RK4,RKF45};
 
@@ -22,7 +20,9 @@ enum IntegratorType {UNSET,FE,RK4,RKF45};
  *  \var Integrator::du
  *  dimension of control space
  *  \var Integrator::drift
- *  drift dynamics
+ *  drift dynamics (time,state,out,jac,args)
+ *  \var Integrator::dargs
+ *  additional arguments to drift dynamics
  *  \var Integrator::dt
  *  timestep to use
  *  \var Integrator::dtmin
@@ -41,7 +41,8 @@ struct Integrator
     size_t dx;
 
     enum IntegratorType type;
-    struct Drift * drift;
+    int (*drift)(double,const double *,double*,double*,void*);
+    void * dargs;
 
     // controller stuff
     size_t du;
@@ -86,7 +87,8 @@ integrator_create(size_t dx,
     }
     i->dx = dx;
     i->type = UNSET;
-    i->drift = drift_alloc(dx,b,bargs);
+    i->drift = b;
+    i->dargs = bargs;
     i->space = NULL;
 
     i->du = 0;
@@ -121,7 +123,6 @@ int bcon(double time, const double * x, double * out, double * jac, void * arg)
     free(u); u = NULL;
     return res;
 }
-
 
 /*!
   Create an integrator
@@ -164,7 +165,9 @@ integrator_create_controlled(
     i->dtmax = 0;
     i->tol = 0.0;
 
-    i->drift = drift_alloc(dx,bcon,i);
+    i->drift = bcon;
+    i->dargs = i; // this is extremly dangerous!!!
+
     return i;
 }
 
@@ -184,7 +187,6 @@ Free memory for integrator
 void integrator_destroy(struct Integrator * i)
 {
     if (i != NULL){
-        drift_free(i->drift); i->drift = NULL;
         free(i->space); i->space = NULL;
         free(i); i= NULL;
     }
@@ -265,7 +267,8 @@ void integrator_set_verbose(struct Integrator * i, int verbose)
 int integrator_step_rk4(struct Integrator * i, double time, double * x)
 {
         
-    int res = drift_eval(i->drift,time,x,i->space,NULL);
+
+    int res = i->drift(time,x,i->space,NULL,i->dargs);
     if (res != 0){
         return res;
     }
@@ -274,7 +277,8 @@ int integrator_step_rk4(struct Integrator * i, double time, double * x)
     for (size_t ii = 0; ii < i->dx; ii++){
         x[ii] += i->dt/2.0 * i->space[ii];
     }
-    res = drift_eval(i->drift,time+i->dt/2.0,x,i->space+i->dx,NULL);
+
+    res = i->drift(time+i->dt/2.0,x,i->space+i->dx,NULL,i->dargs);
     if (res != 0){
         return res;
     }
@@ -284,7 +288,8 @@ int integrator_step_rk4(struct Integrator * i, double time, double * x)
         x[ii] -= i->dt/2.0 * i->space[ii];
         x[ii] += i->dt/2.0 * i->space[ii+i->dx];
     }
-    res = drift_eval(i->drift,time+i->dt/2.0,x,i->space+2*i->dx,NULL);
+
+    res = i->drift(time+i->dt/2.0,x,i->space+2*i->dx,NULL,i->dargs);
     if (res != 0){
         return res;
     }
@@ -294,7 +299,7 @@ int integrator_step_rk4(struct Integrator * i, double time, double * x)
         x[ii] -= i->dt/2.0 * i->space[ii+i->dx];
         x[ii] += i->dt * i->space[ii+2*i->dx];
     }
-    res = drift_eval(i->drift,time+i->dt/2.0,x,i->space+3*i->dx,NULL);
+    res = i->drift(time+i->dt/2.0,x,i->space+3*i->dx,NULL,i->dargs);
     if (res != 0){
         return res;
     }
@@ -329,7 +334,7 @@ double integrator_step_rkf45(struct Integrator * i, double time, double * x)
     do
     {
         //k1
-        int res = drift_eval(i->drift,time+c[0]*i->dt,x,i->space,NULL);
+        int res = i->drift(time+c[0]*i->dt,x,i->space,NULL,i->dargs);
         if (res != 0){
             return res;
         }
@@ -340,7 +345,7 @@ double integrator_step_rkf45(struct Integrator * i, double time, double * x)
             xs[ii] = x[ii] + a1 * i->space[ii];
 
         }
-        res = drift_eval(i->drift,time+c[1]*i->dt,xs,i->space+i->dx,NULL);
+        res = i->drift(time+c[1]*i->dt,xs,i->space+i->dx,NULL,i->dargs);
         if (res != 0){
             return res;
         }
@@ -352,7 +357,7 @@ double integrator_step_rkf45(struct Integrator * i, double time, double * x)
             xs[ii] += a2[1] * i->space[ii+i->dx];
 
         }
-        res = drift_eval(i->drift,time+c[2]*i->dt,xs,i->space+2*i->dx,NULL);
+        res = i->drift(time+c[2]*i->dt,xs,i->space+2*i->dx,NULL,i->dargs);
         if (res != 0){
             return res;
         }
@@ -364,7 +369,7 @@ double integrator_step_rkf45(struct Integrator * i, double time, double * x)
             i->space[ii + 2*i->dx] *= i->dt;
             xs[ii] += a3[2] * i->space[ii+2*i->dx];
         }
-        res = drift_eval(i->drift,time+c[3]*i->dt,xs,i->space+3*i->dx,NULL);
+        res = i->drift(time+c[3]*i->dt,xs,i->space+3*i->dx,NULL,i->dargs);
         if (res != 0){
             return res;
         }
@@ -377,7 +382,7 @@ double integrator_step_rkf45(struct Integrator * i, double time, double * x)
             i->space[ii + 3*i->dx] *= i->dt;
             xs[ii] += a4[3] * i->space[ii+3*i->dx];
         }
-        res = drift_eval(i->drift,time+c[4]*i->dt,xs,i->space+4*i->dx,NULL);
+        res = i->drift(time+c[4]*i->dt,xs,i->space+4*i->dx,NULL,i->dargs);
         if (res != 0){
             return res;
         }
@@ -391,7 +396,7 @@ double integrator_step_rkf45(struct Integrator * i, double time, double * x)
             i->space[ii + 4*i->dx] *= i->dt;
             xs[ii] += a5[4] * i->space[ii+4*i->dx];
         }
-        res = drift_eval(i->drift,time+c[5]*i->dt,xs,i->space+5*i->dx,NULL);
+        res = i->drift(time+c[5]*i->dt,xs,i->space+5*i->dx,NULL,i->dargs);
         if (res != 0){
             return res;
         }
@@ -499,7 +504,7 @@ void integrator_step(struct Integrator * i,
             end[ii] = start[ii];
         }
         while (time < end_time){
-            int res = drift_eval(i->drift,time,end,i->space,NULL);
+            int res = i->drift(time,end,i->space,NULL,i->dargs);
             assert (res == 0);
             for (size_t ii = 0; ii < i->dx; ii++){
                 end[ii] = end[ii] + i->dt * i->space[ii];
@@ -555,111 +560,48 @@ void integrator_step(struct Integrator * i,
 }
 
 /*!
-   Take a step of forward euler
-*/
-int euler_step(double time, const double * x, double * nextx,
-               double dt,struct Dyn * dyn, double * driftv)
-{
-
-    int res = dyn_eval(dyn,time,x,driftv,NULL,NULL);
-       
-    size_t dx = dyn_get_dx(dyn);
-    for (size_t ii = 0; ii < dx; ii++){
-        nextx[ii] = x[ii] + dt * driftv[ii];
-    }
-    
-    return res;
-}
-
-
-int rk4_step(double time, const double * x, double * nextx,
-             double dt,struct Dyn * dyn, double * driftv)
-{
-    size_t dx = dyn_get_dx(dyn);
-    //k1
-    int res = dyn_eval(dyn,time,x,driftv,NULL,NULL);
-    if (res != 0){
-        return res;
-    }
-
-    //k2
-    for (size_t ii = 0; ii < dx; ii++){
-        nextx[ii] = x[ii] + dt/2.0 * driftv[ii];
-    }
-    res = dyn_eval(dyn,time+dt/2.0,nextx,driftv+dx,NULL,NULL);
-    if (res != 0){
-        return res;
-    }
-
-    //k3
-    for (size_t ii = 0; ii < dx; ii++){
-        nextx[ii] = x[ii] + dt/2.0 * driftv[ii+dx];
-    }
-    res = dyn_eval(dyn,time+dt/2.0,nextx,driftv+2*dx,NULL,NULL);
-    if (res != 0){
-        return res;
-    }
-
-    //k4
-    for (size_t ii = 0; ii < dx; ii++){
-        nextx[ii] = x[ii] + dt * driftv[ii+2*dx];
-    }
-    res = dyn_eval(dyn,time+dt,nextx,driftv+3*dx,NULL,NULL);
-    if (res != 0){
-        return res;
-    }
-
-    // final
-    for (size_t ii = 0; ii < dx; ii++){
-        nextx[ii] = x[ii] + dt/6.0 * ( driftv[ii] + 2.0*driftv[dx+ii] + 2.0*driftv[2*dx+ii] + driftv[3*dx+ii]);
-    }
-    
-    return res;
-}
-
-/*!
    Take a step of euler_maruyama
 */
-int 
-euler_maruyama_step(double time, const double * x, const double * noise,
-                    double * nextx, double dt, struct Dyn * dyn, 
-                    double * drift, double * diff)
-{
+/* int  */
+/* euler_maruyama_step(double time, const double * x, const double * noise, */
+/*                     double * nextx, double dt, struct Dyn * dyn,  */
+/*                     double * drift, double * diff) */
+/* { */
 
-    size_t d = dyn_get_dx(dyn);
-    size_t dw = dyn_get_dw(dyn);
-    int res = dyn_eval(dyn,time,x,drift,NULL,diff);
+/*     size_t d = dyn_get_dx(dyn); */
+/*     size_t dw = dyn_get_dw(dyn); */
+/*     int res = dyn_eval(dyn,time,x,drift,NULL,diff); */
 
-    double sqrtdt = sqrt(dt);
-    for (size_t ii = 0; ii < d; ii++ ){
-        nextx[ii] = x[ii] + dt * drift[ii];
-        for (size_t jj = 0; jj < dw; jj++){
-            nextx[ii] += sqrtdt*diff[jj*d+ii]*noise[jj];
-            if (isinf(nextx[ii])){
-                fprintf(stderr,"STOP!\n");
-                printf("noise \n");
-                for (size_t kk = 0; kk < dw; kk++){
-                    printf("%G ",noise[kk]);
-                }
-                printf("\n");
-                printf("now diff\n");
-                for (size_t kk = 0; kk < dw; kk++){
-                    printf("%G ",diff[kk*d+ii]);
-                }
-                printf("\n");
-                printf("drift is %G\n",drift[ii]);
-                printf("now x\n");
-                for (size_t kk = 0; kk < d; kk++){
-                    printf("%G ",x[kk]);
-                }
-                printf("\n");
-                exit(1);
-            }
-        }
+/*     double sqrtdt = sqrt(dt); */
+/*     for (size_t ii = 0; ii < d; ii++ ){ */
+/*         nextx[ii] = x[ii] + dt * drift[ii]; */
+/*         for (size_t jj = 0; jj < dw; jj++){ */
+/*             nextx[ii] += sqrtdt*diff[jj*d+ii]*noise[jj]; */
+/*             if (isinf(nextx[ii])){ */
+/*                 fprintf(stderr,"STOP!\n"); */
+/*                 printf("noise \n"); */
+/*                 for (size_t kk = 0; kk < dw; kk++){ */
+/*                     printf("%G ",noise[kk]); */
+/*                 } */
+/*                 printf("\n"); */
+/*                 printf("now diff\n"); */
+/*                 for (size_t kk = 0; kk < dw; kk++){ */
+/*                     printf("%G ",diff[kk*d+ii]); */
+/*                 } */
+/*                 printf("\n"); */
+/*                 printf("drift is %G\n",drift[ii]); */
+/*                 printf("now x\n"); */
+/*                 for (size_t kk = 0; kk < d; kk++){ */
+/*                     printf("%G ",x[kk]); */
+/*                 } */
+/*                 printf("\n"); */
+/*                 exit(1); */
+/*             } */
+/*         } */
             
-    }
-    return res;
-}
+/*     } */
+/*     return res; */
+/* } */
 
 
 
