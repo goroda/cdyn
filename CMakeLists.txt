@@ -1,5 +1,16 @@
 cmake_minimum_required (VERSION 2.6)
-project (TTC)
+project (CDYN)
+
+#create my librray
+set(C3_VERSION_MAJOR 1 CACHE STRING "major version" FORCE)
+set(C3_VERSION_MINOR 0 CACHE STRING "minor version" FORCE)
+set(C3_VERSION "${C3_VERSION_MAJOR}.${C3_VERSION_MINOR}" CACHE STRING "version" FORCE)
+
+option(C3_DEBUG_MODE "whether or not debug mode is activated" OFF)
+
+set(include_dest "include/cdyn")
+set(main_lib_dest "lib/cdyn")
+set(lib_dest "${main_lib_dest}/${CMAKE_BUILD_TYPE}")
 
 if (APPLE)
     option(USE_CLANG "build application with clang" ON)
@@ -48,4 +59,5 @@ add_subdirectory(test)
 #add_subdirectory(examples)
 
 
-
+install(FILES cmake/cdyn-config.cmake DESTINATION ${main_lib_dest})
+install(EXPORT cdyn DESTINATION ${lib_dest})
