@@ -25,7 +25,7 @@ Notes:
 
 ## More information
 
-Author: [Alex A. Gorodetsky](www.alexgorodetsky.com)  
+Author: [Alex A. Gorodetsky](https://www.alexgorodetsky.com)  
 Contact: [goroda@umich.edu](mailto:goroda@umich.edu)  
 Copyright (c) 2016 Massachusetts Institute of Technology  
 Copyright (c) 2018 University of Michigan  
