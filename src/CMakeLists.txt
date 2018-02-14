@@ -26,12 +26,7 @@ target_link_libraries(cdyn
   ${blas_lapack}
   -lm
   )
-target_include_directories(cdyn PUBLIC 
-                     $<BUILD_INTERFACE:${CDYN_SOURCE_DIR}/include>
-                     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
-                     $<INSTALL_INTERFACE:${include_dest}>
-                     $<INSTALL_INTERFACE:${lib_dest}>)
 
-install(TARGETS cdyn EXPORT cdyn DESTINATION "${lib_dest}")
-install(FILES ${header} DESTINATION "${include_dest}")
+install(TARGETS cdyn DESTINATION lib)
+install(FILES ${header} DESTINATION include/cdyn)
 

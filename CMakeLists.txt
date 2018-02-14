@@ -2,15 +2,11 @@ cmake_minimum_required (VERSION 2.6)
 project (CDYN)
 
 #create my librray
-set(C3_VERSION_MAJOR 1 CACHE STRING "major version" FORCE)
-set(C3_VERSION_MINOR 0 CACHE STRING "minor version" FORCE)
-set(C3_VERSION "${C3_VERSION_MAJOR}.${C3_VERSION_MINOR}" CACHE STRING "version" FORCE)
+set(CDYN_VERSION_MAJOR 1 CACHE STRING "major version" FORCE)
+set(CDYN_VERSION_MINOR 0 CACHE STRING "minor version" FORCE)
+set(CDYN_VERSION "${CDYN_VERSION_MAJOR}.${CDYN_VERSION_MINOR}" CACHE STRING "version" FORCE)
 
-option(C3_DEBUG_MODE "whether or not debug mode is activated" OFF)
-
-set(include_dest "include/cdyn")
-set(main_lib_dest "lib/cdyn")
-set(lib_dest "${main_lib_dest}/${CMAKE_BUILD_TYPE}")
+option(CDYN_DEBUG_MODE "whether or not debug mode is activated" OFF)
 
 if (APPLE)
     option(USE_CLANG "build application with clang" ON)
@@ -33,31 +29,17 @@ else ()
 
     include_directories(/usr/include)
     set(blas_lapack "-lblas -llapack")
-
-    #find_package(SWIG REQUIRED)
-    #include(${SWIG_USE_FILE})
 endif()
 
 set(CMAKE_CXX_COMPILER "gcc")
 
-#set(static_libs 1)
 set(static_libs 0)
 
 include_directories(${BLAS_INCLUDE_DIR}, ${LAPACK_INCLUDE_DIR})
 
 set(CMAKE_C_FLAGS "${compiler_flags}")
 
-#c3 library include files
-#include_directories(../c3/include)
-
-#include_directories(include)
 include_directories(src)
-
-
 add_subdirectory(src)
 add_subdirectory(test)
-#add_subdirectory(examples)
 
-
-install(FILES cmake/cdyn-config.cmake DESTINATION ${main_lib_dest})
-install(EXPORT cdyn DESTINATION ${lib_dest})
