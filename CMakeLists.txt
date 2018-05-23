@@ -26,9 +26,11 @@ else ()
 
     find_package(BLAS REQUIRED)
     find_package(LAPACK REQUIRED)
-
+    include_directories(${BLAS_INCLUDE_DIR}, ${LAPACK_INCLUDE_DIR})
+    set(blas_lapack ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
+    
     include_directories(/usr/include)
-    set(blas_lapack "-lblas -llapack")
+#   set(blas_lapack "-lblas -llapack")
 endif()
 
 set(CMAKE_CXX_COMPILER "gcc")
