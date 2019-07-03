@@ -25,6 +25,7 @@ void integrator_set_type(struct Integrator *, char *);
 void integrator_set_dt(struct Integrator *, double);
 void integrator_set_adaptive_opts(struct Integrator *, double, double, double);
 void integrator_set_verbose(struct Integrator *, int);
+void integrator_set_dargs(struct Integrator *, void *);
 void integrator_step(struct Integrator *,
                      double, double,
                      const double *, double *);
