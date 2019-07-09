@@ -6,6 +6,8 @@
 #ifndef INTEGRATE_H
 #define INTEGRATE_H
 
+#include <stdlib.h>
+
 struct Integrator;
 struct Integrator *
 integrator_create(size_t,
