@@ -262,6 +262,19 @@ void integrator_set_verbose(struct Integrator * i, int verbose)
 }
 
 /*!
+  Set the drift arguments
+
+  \param[in,out]   - integrator
+  \param[in] bargs - arguments to drift dynamics
+
+*/
+void integrator_set_dargs(struct Integrator * ode, void * bargs)
+{
+    assert (ode != NULL);
+    ode->dargs = bargs;
+}
+
+/*!
   Fourth order runge kutta scheme
 */
 int integrator_step_rk4(struct Integrator * i, double time, double * x)
