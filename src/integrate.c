@@ -265,8 +265,8 @@ void integrator_set_verbose(struct Integrator * i, int verbose)
 /*!
   Set the drift arguments
 
-  \param[in,out]   - integrator
-  \param[in] bargs - arguments to drift dynamics
+  \param[in,out] ode   - integrator
+  \param[in]     bargs - arguments to drift dynamics
 
 */
 void integrator_set_dargs(struct Integrator * ode, void * bargs)

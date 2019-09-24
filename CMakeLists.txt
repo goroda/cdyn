@@ -9,15 +9,20 @@ set(CDYN_VERSION "${CDYN_VERSION_MAJOR}.${CDYN_VERSION_MINOR}" CACHE STRING "ver
 option(CDYN_DEBUG_MODE "whether or not debug mode is activated" OFF)
 
 if (APPLE)
-    option(USE_CLANG "build application with clang" ON)
-    include_directories(/opt/local/include)
-    find_library(macblas
-        NAMES ACCELERATE
-        PATHS ${CMAKE_OSX_SYSROOT}/System/Library
-        PATH_SUFFIXES Frameworks
-        NO_DEFAULT_PATH)
-        
-    set(blas_lapack ${macblas}/Accelerate)
+  set(CMAKE_MACOSX_RPATH 1)
+  option(USE_CLANG "build application with clang" ON)
+  include_directories(/opt/local/include)
+  # find_library(macblas
+  #       NAMES ACCELERATE
+  #       PATHS ${CMAKE_OSX_SYSROOT}/System/Library
+  #       PATH_SUFFIXES Frameworks
+  #       NO_DEFAULT_PATH)
+    find_package(BLAS REQUIRED)
+    find_package(LAPACK REQUIRED)
+    include_directories(${BLAS_INCLUDE_DIR}, ${LAPACK_INCLUDE_DIR})
+    set(blas_lapack ${BLAS_LIBRARIES} ${LAPACK_LIBRARIES})
+    
+    # set(blas_lapack ${macblas}/Accelerate)
     set(compiler_flags "-std=c99 -O3 -Wall -Weverything -Wno-shorten-64-to-32 -Wno-padded -Wno-missing-prototypes -Wno-format-nonliteral -Wno-disabled-macro-expansion")
     set(CMAKE_C_COMPILER "clang")
 else ()
