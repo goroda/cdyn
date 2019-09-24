@@ -101,7 +101,8 @@ integrator_create(size_t dx,
     i->dtmin = 0;
     i->dtmax = 0;
     i->tol = 0.0;
-    
+
+    i->verbose = 0;
     return i;
 }
 

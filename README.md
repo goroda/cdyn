@@ -34,7 +34,6 @@ sudo ldconfig -v
 ```
 
 
-
 ## More information
 
 Author: [Alex A. Gorodetsky](https://www.alexgorodetsky.com)  
