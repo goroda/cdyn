@@ -172,6 +172,25 @@ integrator_create_controlled(
     return i;
 }
 
+
+/*!
+  Update the arguments used in the controller
+
+  \param[in] i     - integrator
+  \param[in] args  - control arguments
+
+*/
+int integrator_update_control_args(struct Integrator * i, void * args)
+{
+    assert(i != NULL);
+    assert(args != NULL);
+
+    i->cargs = args;
+
+    return 0;
+}
+
+
 /*!
 Evaluate the controller
 */

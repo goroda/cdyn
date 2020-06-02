@@ -20,6 +20,9 @@ integrator_create_controlled(
     void *,
     int (*)(double, const double *, double *, void *),
     void *);
+
+int integrator_update_control_args(struct Integrator * i, void * args);
+
 int integrator_eval_controller(struct Integrator *,
                                double, const double *, double *);
 void integrator_destroy(struct Integrator *);
