@@ -570,7 +570,7 @@ void integrator_step(struct Integrator * i,
         }
         while (time < end_time){
             
-            if (i->verbose > 0){
+            if (i->verbose > 1){
                 fprintf(stdout,"Time=%G\n",time);
             }
             double dtmax_store = i->dtmax;
